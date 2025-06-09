@@ -19,7 +19,7 @@ get id:
     "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" | jq '.'
 
 temp_filename := storage + "/temp/" + uuid() + ".md"
-# make a new memo given a markdown file
+# make a new memo, provide path to file for existing file
 new *file:
   {{ if file == "" { "touch " + temp_filename + " && $EDITOR " + temp_filename } else { "" } }}
   @xh post https://{{ memos_instance }}/api/v1/memos \
