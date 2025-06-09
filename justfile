@@ -54,5 +54,5 @@ open:
 # edit note from id with $EDITOR
 edit id:
   @just dl {{ id }}
-  @$EDITOR "{{ storage }}/memos/{{ id }}.md"
+  @$EDITOR {{ storage }}/memos/{{ id }}.md
   @just update {{ id }}
