@@ -31,24 +31,28 @@ new *file:
 dl id:
   @xh get https://{{ memos_instance }}/api/v1/memos/{{ id }} \
     "Accept: application/json" \
-    "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" | jq -r '.content' > {{ storage }}/{{ id }}.md
-  @echo "downloaded to {{storage}}/{{ id }}.md"
+    "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" | jq -r '.content' > {{ storage }}/memos/{{ id }}.md
+  @echo "downloaded to {{storage}}/memos/{{ id }}.md"
 
 # update a memo from standardized local storage (from dl above)
 update id:
   @xh patch https://{{ memos_instance }}/api/v1/memos/{{ id }} \
     "Content-Type: text/plain;charset=UTF-8" \
     "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" \
-    "content=$(jq -Rsr '.' {{ storage }}/{{ id }}.md)" | jq -r '.name' | awk '{print "https://{{ memos_instance }}/"$1}'
+    "content=$(jq -Rsr '.' {{ storage }}/memos/{{ id }}.md)" \
+    "updateTime={{ datetime_utc('%+') }}" \
+    | jq -r '.name' | awk '{print "memo updated @ https://{{ memos_instance }}/"$1}'
 
 # list downloaded
 ls:
-  @ls -1 {{ storage }} | sed -e 's/\..*$//'
+  @ls -1 {{ storage }}/memos | sed -e 's/\..*$//'
 
 # open storage dir
 open:
-  open {{ storage }}
+  open {{ storage }}/memos
 
-# edit local file by id with $EDITOR
+# edit note from id with $EDITOR
 edit id:
-  $EDITOR "{{ storage }}/{{ id }}.md"
+  @just dl {{ id }}
+  @$EDITOR "{{ storage }}/memos/{{ id }}.md"
+  @just update {{ id }}
