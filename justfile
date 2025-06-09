@@ -21,7 +21,7 @@ get id:
 temp_filename := storage + "/temp/" + uuid() + ".md"
 # make a new memo, provide path to file for existing file
 new *file:
-  {{ if file == "" { "touch " + temp_filename + " && $EDITOR " + temp_filename } else { "" } }}
+  {{ if file == "" { "touch " + temp_filename + " && $UMCH_MARKDOWN_EDITOR " + temp_filename } else { "" } }}
   @xh post https://{{ memos_instance }}/api/v1/memos \
     "Content-Type: text/plain;charset=UTF-8" \
     "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" \
@@ -51,8 +51,8 @@ ls:
 open:
   open {{ storage }}/memos
 
-# edit note from id with $EDITOR
+# edit note from id with $UMCH_MARKDOWN_EDITOR
 edit id:
   @just dl {{ id }}
-  @$EDITOR {{ storage }}/memos/{{ id }}.md
+  @$UMCH_MARKDOWN_EDITOR {{ storage }}/memos/{{ id }}.md
   @just update {{ id }}
