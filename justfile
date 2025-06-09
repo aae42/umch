@@ -14,9 +14,10 @@ setup:
 
 # get info about a memo w/ it's id
 get id:
-  @xh get https://{{ memos_instance }}/api/v1/memos/{{ id }} \
-    "Accept: application/json" \
-    "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" | jq '.'
+  @ID="$(just _strip-id-from-url {{id}})" && \
+    xh get https://{{ memos_instance }}/api/v1/memos/$ID \
+      "Accept: application/json" \
+      "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" | jq '.'
 
 temp_filename := storage + "/temp/" + uuid() + ".md"
 # make a new memo, provide path to file for existing file
@@ -29,19 +30,21 @@ new *file:
 
 # download a memo w/ it's id, put it in standardized local storage (output path)
 dl id:
-  @xh get https://{{ memos_instance }}/api/v1/memos/{{ id }} \
-    "Accept: application/json" \
-    "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" | jq -r '.content' > {{ storage }}/memos/{{ id }}.md
-  @echo "downloaded to {{storage}}/memos/{{ id }}.md"
+  @ID="$(just _strip-id-from-url {{id}})" && \
+    xh get https://{{ memos_instance }}/api/v1/memos/$ID \
+      "Accept: application/json" \
+      "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" | jq -r '.content' > {{ storage }}/memos/$ID.md && \
+    echo "downloaded to {{storage}}/memos/$ID.md"
 
 # update a memo from standardized local storage (from dl above)
 update id:
-  @xh patch https://{{ memos_instance }}/api/v1/memos/{{ id }} \
-    "Content-Type: text/plain;charset=UTF-8" \
-    "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" \
-    "content=$(jq -Rsr '.' {{ storage }}/memos/{{ id }}.md)" \
-    "updateTime={{ datetime_utc('%+') }}" \
-    | jq -r '.name' | awk '{print "memo updated @ https://{{ memos_instance }}/"$1}'
+  @ID="$(just _strip-id-from-url {{id}})" && \
+    xh patch https://{{ memos_instance }}/api/v1/memos/$ID \
+      "Content-Type: text/plain;charset=UTF-8" \
+      "Authorization: Bearer $UMCH_USEMEMOS_TOKEN" \
+      "content=$(jq -Rsr '.' {{ storage }}/memos/$ID.md)" \
+      "updateTime={{ datetime_utc('%+') }}" \
+        | jq -r '.name' | awk '{print "memo updated @ https://{{ memos_instance }}/"$1}'
 
 # list downloaded
 ls:
@@ -53,6 +56,10 @@ open:
 
 # edit note from id with $UMCH_MARKDOWN_EDITOR
 edit id:
-  @just dl {{ id }}
-  @$UMCH_MARKDOWN_EDITOR {{ storage }}/memos/{{ id }}.md
-  @just update {{ id }}
+  @ID="$(just _strip-id-from-url {{id}})" && \
+    just dl $ID && \
+    $UMCH_MARKDOWN_EDITOR {{ storage }}/memos/$ID.md && \
+    just update $ID
+
+_strip-id-from-url $URL:
+  @echo "${URL##*/}"
